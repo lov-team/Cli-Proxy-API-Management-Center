@@ -178,7 +178,10 @@ export function AuthFileCard(props: AuthFileCardProps) {
       )}
 
       {rawStatusMessage && hasStatusWarning && (
-        <div className={styles.warning} title={rawStatusMessage}>
+        <div
+          className={`${styles.warning} ${rawStatusMessage.startsWith('额度用尽，已临时冻结') ? styles.quotaFreeze : ''}`}
+          title={rawStatusMessage}
+        >
           <IconInfo className={styles.warningIcon} size={14} />
           <span>{rawStatusMessage}</span>
         </div>

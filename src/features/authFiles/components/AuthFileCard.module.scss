@@ -159,6 +159,16 @@
   margin-top: 2px;
 }
 
+.quotaFreeze {
+  color: var(--text-primary);
+  font-weight: 650;
+  border-color: color-mix(in srgb, var(--warning-text) 55%, var(--border-color));
+
+  span {
+    -webkit-line-clamp: 3;
+  }
+}
+
 /* ---------- 健康区：eyebrow + 计数 + 状态条 ---------- */
 
 .health {
