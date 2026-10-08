@@ -35,6 +35,83 @@
   gap: 16px;
 }
 
+.featured {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 42%, var(--border-color));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
+.featuredBadge {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+  color: var(--primary-color);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.featuredLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(200px, 260px);
+  gap: 16px;
+  align-items: start;
+
+  @include mobile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.featuredCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.featuredTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.featuredDesc,
+.featuredStatus {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.featuredStatus {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.featuredControl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.concurrencyInput {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .section {
   display: flex;
   flex-direction: column;

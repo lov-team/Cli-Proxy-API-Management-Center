@@ -39,7 +39,10 @@ type AuthFileHeadersErrorKey =
 type AuthFileContentErrorKey =
   'auth_files.prefix_proxy_invalid_json' | 'auth_files.prefix_proxy_html_challenge';
 type AuthFileWeightErrorKey = 'auth_files.weight_invalid_integer' | 'auth_files.weight_invalid_max';
-type AuthFileEditorErrorKey = AuthFileHeadersErrorKey | AuthFileWeightErrorKey;
+type AuthFileEditorErrorKey =
+  | AuthFileHeadersErrorKey
+  | AuthFileWeightErrorKey
+  | AuthFileConcurrencyErrorKey;
 
 export type PrefixProxyEditorField =
   | CredentialPolicyField
@@ -47,6 +50,8 @@ export type PrefixProxyEditorField =
   | 'proxyUrl'
   | 'priority'
   | 'weight'
+  | 'maxConcurrency'
+  | 'maxConcurrencyUnlimited'
   | 'disableCooling'
   | 'websockets'
   | 'usingApi'
@@ -73,6 +78,9 @@ export type PrefixProxyEditorState = {
   priority: string;
   weight: string;
   weightError: string | null;
+  maxConcurrency: string;
+  maxConcurrencyUnlimited: boolean;
+  maxConcurrencyError: string | null;
   disableCooling: boolean;
   disableCoolingTouched: boolean;
   websockets: boolean;
@@ -144,6 +152,40 @@ const parseHeadersText = (
 
 const credentialWeightErrorKey = (error: CredentialWeightError): AuthFileWeightErrorKey =>
   error === 'max' ? 'auth_files.weight_invalid_max' : 'auth_files.weight_invalid_integer';
+
+const MAX_ACCOUNT_CONCURRENCY = 100_000;
+
+type AuthFileConcurrencyErrorKey =
+  'auth_files.concurrency_invalid' | 'auth_files.concurrency_invalid_max';
+
+const readAuthFileConcurrency = (value: Record<string, unknown>): number | undefined => {
+  const raw = value.max_concurrency !== undefined ? value.max_concurrency : value.concurrency;
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw.trim()) : NaN;
+  if (!Number.isInteger(parsed) || parsed === 0 || parsed < -1) return undefined;
+  return parsed;
+};
+
+const validateConcurrencyText = (
+  text: string,
+  unlimited: boolean
+): AuthFileConcurrencyErrorKey | null => {
+  if (unlimited) return null;
+  const trimmed = text.trim();
+  if (!trimmed || trimmed === '-1') return null;
+  if (!/^-?\d+$/.test(trimmed)) return 'auth_files.concurrency_invalid';
+  const value = Number(trimmed);
+  if (value < 1) return 'auth_files.concurrency_invalid';
+  if (value > MAX_ACCOUNT_CONCURRENCY) return 'auth_files.concurrency_invalid_max';
+  return null;
+};
+
+const nextConcurrencyValue = (text: string, unlimited: boolean): number | undefined => {
+  if (unlimited || text.trim() === '-1') return -1;
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  return Number(trimmed);
+};
 
 const normalizeTextField = (value: unknown): string =>
   typeof value === 'string' ? value.trim() : '';
@@ -330,6 +372,24 @@ export const buildAuthFileFieldsPatch = (
     patch.weight = nextWeight;
   }
 
+  const concurrencyError = validateConcurrencyText(
+    editor.maxConcurrency ?? '',
+    Boolean(editor.maxConcurrencyUnlimited)
+  );
+  if (concurrencyError) {
+    throw new Error(resolveError(concurrencyError));
+  }
+  const originalConcurrency = readAuthFileConcurrency(original);
+  const nextConcurrency = nextConcurrencyValue(
+    editor.maxConcurrency ?? '',
+    Boolean(editor.maxConcurrencyUnlimited)
+  );
+  if (nextConcurrency === undefined) {
+    if (originalConcurrency !== undefined) patch.max_concurrency = null;
+  } else if (nextConcurrency !== originalConcurrency) {
+    patch.max_concurrency = nextConcurrency;
+  }
+
   if (editor.disableCoolingTouched) {
     const originalDisableCooling = readAuthFileDisableCooling(original);
     const nextDisableCooling = Boolean(editor.disableCooling);
@@ -430,6 +490,15 @@ const buildPrefixProxyUpdatedText = (
     }
   }
 
+  if (patch.max_concurrency !== undefined) {
+    delete next.concurrency;
+    if (patch.max_concurrency === null) {
+      delete next.max_concurrency;
+    } else {
+      next.max_concurrency = patch.max_concurrency;
+    }
+  }
+
   if (patch.disable_cooling !== undefined) {
     next.disable_cooling = patch.disable_cooling;
   }
@@ -480,6 +549,7 @@ export function useAuthFilesPrefixProxyEditor(
   const hasBlockingValidationError = Boolean(
     (prefixProxyEditor?.headersTouched && prefixProxyEditor.headersError) ||
     prefixProxyEditor?.weightError ||
+    prefixProxyEditor?.maxConcurrencyError ||
     credentialPolicyError(prefixProxyEditor?.policy)
   );
   const prefixProxyUpdatedText =
@@ -531,6 +601,9 @@ export function useAuthFilesPrefixProxyEditor(
       priority: '',
       weight: '',
       weightError: null,
+      maxConcurrency: '',
+      maxConcurrencyUnlimited: false,
+      maxConcurrencyError: null,
       disableCooling: false,
       disableCoolingTouched: false,
       websockets: false,
@@ -585,6 +658,7 @@ export function useAuthFilesPrefixProxyEditor(
       const proxyUrl = typeof json.proxy_url === 'string' ? json.proxy_url : '';
       const priority = parsePriorityValue(json.priority);
       const weight = readCredentialWeight(json.weight);
+      const concurrency = readAuthFileConcurrency(json);
       const disableCooling = readAuthFileDisableCooling(json);
       const websockets = supportsAuthFileWebsockets(providerKey)
         ? readAuthFileWebsockets(json)
@@ -617,6 +691,10 @@ export function useAuthFilesPrefixProxyEditor(
           priority: priority !== undefined ? String(priority) : '',
           weight: weight !== undefined ? String(weight) : '',
           weightError: null,
+          maxConcurrency:
+            concurrency !== undefined && concurrency !== -1 ? String(concurrency) : '',
+          maxConcurrencyUnlimited: concurrency === -1,
+          maxConcurrencyError: null,
           disableCooling,
           disableCoolingTouched: false,
           websockets,
@@ -671,6 +749,33 @@ export function useAuthFilesPrefixProxyEditor(
           ...prev,
           weight,
           weightError: error ? t(credentialWeightErrorKey(error)) : null,
+        };
+      }
+      if (field === 'maxConcurrency') {
+        const maxConcurrency = String(value);
+        if (maxConcurrency.trim() === '-1') {
+          return {
+            ...prev,
+            maxConcurrency: '',
+            maxConcurrencyUnlimited: true,
+            maxConcurrencyError: null,
+          };
+        }
+        const error = validateConcurrencyText(maxConcurrency, false);
+        return {
+          ...prev,
+          maxConcurrency,
+          maxConcurrencyUnlimited: false,
+          maxConcurrencyError: error ? t(error) : null,
+        };
+      }
+      if (field === 'maxConcurrencyUnlimited') {
+        const maxConcurrencyUnlimited = Boolean(value);
+        const error = validateConcurrencyText(prev.maxConcurrency, maxConcurrencyUnlimited);
+        return {
+          ...prev,
+          maxConcurrencyUnlimited,
+          maxConcurrencyError: error ? t(error) : null,
         };
       }
       if (field === 'disableCooling') {

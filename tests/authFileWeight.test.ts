@@ -63,6 +63,67 @@ describe('auth-file credential weight patch', () => {
   });
 });
 
+describe('auth-file concurrency patch', () => {
+  test('writes a positive cap and uses null to restore the default', () => {
+    expect(
+      buildAuthFileFieldsPatch(
+        { ...makeEditor({}, ''), maxConcurrency: '4', maxConcurrencyUnlimited: false },
+        resolveError
+      )
+    ).toEqual({ max_concurrency: 4 });
+    expect(
+      buildAuthFileFieldsPatch(
+        {
+          ...makeEditor({ max_concurrency: 4 }, ''),
+          maxConcurrency: '',
+          maxConcurrencyUnlimited: false,
+        },
+        resolveError
+      )
+    ).toEqual({ max_concurrency: null });
+  });
+
+  test('writes -1 for unlimited and reads the legacy concurrency field', () => {
+    expect(
+      buildAuthFileFieldsPatch(
+        { ...makeEditor({}, ''), maxConcurrency: '', maxConcurrencyUnlimited: true },
+        resolveError
+      )
+    ).toEqual({ max_concurrency: -1 });
+    expect(
+      buildAuthFileFieldsPatch(
+        {
+          ...makeEditor({ concurrency: -1 }, ''),
+          maxConcurrency: '',
+          maxConcurrencyUnlimited: true,
+        },
+        resolveError
+      )
+    ).toEqual({});
+  });
+
+  test('rejects zero, decimals, and oversized caps', () => {
+    expect(() =>
+      buildAuthFileFieldsPatch(
+        { ...makeEditor({}, ''), maxConcurrency: '0', maxConcurrencyUnlimited: false },
+        resolveError
+      )
+    ).toThrow('auth_files.concurrency_invalid');
+    expect(() =>
+      buildAuthFileFieldsPatch(
+        { ...makeEditor({}, ''), maxConcurrency: '1.5', maxConcurrencyUnlimited: false },
+        resolveError
+      )
+    ).toThrow('auth_files.concurrency_invalid');
+    expect(() =>
+      buildAuthFileFieldsPatch(
+        { ...makeEditor({}, ''), maxConcurrency: '100001', maxConcurrencyUnlimited: false },
+        resolveError
+      )
+    ).toThrow('auth_files.concurrency_invalid_max');
+  });
+});
+
 describe('auth-file disable cooling patch', () => {
   test('reads canonical and legacy boolean-compatible metadata', () => {
     expect(readAuthFileDisableCooling({ disable_cooling: 'true' })).toBe(true);
@@ -96,9 +157,9 @@ describe('auth-file disable cooling patch', () => {
   });
 
   test('does not patch an untouched or unchanged override', () => {
-    expect(buildAuthFileFieldsPatch(makeEditor({ disable_cooling: true }, ''), resolveError)).toEqual(
-      {}
-    );
+    expect(
+      buildAuthFileFieldsPatch(makeEditor({ disable_cooling: true }, ''), resolveError)
+    ).toEqual({});
     expect(
       buildAuthFileFieldsPatch(
         {

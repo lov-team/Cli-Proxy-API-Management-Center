@@ -210,6 +210,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
               !editor?.json ||
               Boolean(editor?.headersTouched && editor.headersError) ||
               Boolean(editor?.weightError) ||
+              Boolean(editor?.maxConcurrencyError) ||
               Boolean(credentialPolicyError(editor?.policy))
             }
           >
@@ -299,8 +300,48 @@ function AuthFileEditorSections({
   const showWebsockets = supportsAuthFileWebsockets(editor.providerKey);
   const showUsingApi = supportsAuthFileUsingApi(editor.providerKey);
 
+  const concurrencyStatus = editor.maxConcurrencyUnlimited
+    ? t('auth_files.concurrency_status_unlimited')
+    : editor.maxConcurrency.trim()
+      ? t('auth_files.concurrency_status_value', { count: editor.maxConcurrency.trim() })
+      : t('auth_files.concurrency_status_default');
+
   return (
     <div className={styles.sections}>
+      <section className={styles.featured} aria-labelledby="auth-file-concurrency-title">
+        <span className={styles.featuredBadge}>{t('auth_files.concurrency_badge')}</span>
+        <div className={styles.featuredLayout}>
+          <div className={styles.featuredCopy}>
+            <h3 id="auth-file-concurrency-title" className={styles.featuredTitle}>
+              {t('auth_files.concurrency_label')}
+            </h3>
+            <p className={styles.featuredDesc}>{t('auth_files.concurrency_desc')}</p>
+            <p className={styles.featuredStatus}>{concurrencyStatus}</p>
+          </div>
+          <div className={styles.featuredControl}>
+            <Input
+              label={t('auth_files.concurrency_input_label')}
+              type="number"
+              step="1"
+              min={1}
+              max={100000}
+              value={editor.maxConcurrencyUnlimited ? '' : editor.maxConcurrency}
+              placeholder={t('auth_files.concurrency_placeholder')}
+              error={editor.maxConcurrencyError ?? undefined}
+              disabled={locked || editor.maxConcurrencyUnlimited}
+              className={styles.concurrencyInput}
+              onChange={(e) => onChange('maxConcurrency', e.target.value)}
+            />
+            <SwitchField
+              label={t('auth_files.concurrency_unlimited_label')}
+              hint={t('auth_files.concurrency_unlimited_hint')}
+              checked={editor.maxConcurrencyUnlimited}
+              disabled={locked}
+              onChange={(value) => onChange('maxConcurrencyUnlimited', value)}
+            />
+          </div>
+        </div>
+      </section>
       <Section
         index={nextIndex()}
         title={t('auth_files.details_section_connection')}

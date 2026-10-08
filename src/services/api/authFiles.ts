@@ -40,6 +40,7 @@ export type AuthFileFieldsPatch = {
   headers?: Record<string, string>;
   priority?: number;
   weight?: number | null;
+  max_concurrency?: number | null;
   disable_cooling?: boolean;
   'disable-cooling'?: boolean;
   websockets?: boolean;
