@@ -1,5 +1,10 @@
 .policyFields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-width: 0;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-color);
 }
 
 .unsupported {
