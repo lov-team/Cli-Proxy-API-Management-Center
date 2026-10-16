@@ -185,7 +185,7 @@ describe('sortQuotaEntries', () => {
   const resolver = (instants: Record<string, number>) => (entry: QuotaFileEntry) =>
     instants[entry.file.name] ?? null;
 
-  test('default mode preserves order but returns a new array', () => {
+  test('equal weekly balances preserve order but return a new array', () => {
     const sorted = sortQuotaEntries(entries, 'default', () => 1);
     expect(byName(sorted)).toEqual(byName(entries));
     expect(sorted).not.toBe(entries);
