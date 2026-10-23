@@ -35,7 +35,9 @@ import { invalidateAuthFileDerivedCaches } from '@/features/authFiles/cacheInval
 import {
   buildWildcardSearch,
   matchesAuthFileSearch,
+  resolveAuthFileQuotaType,
   sortAuthFiles,
+  sortAuthFilesPageByQuota,
 } from '@/features/authFiles/logic';
 import { useAuthFilesData } from '@/features/authFiles/hooks/useAuthFilesData';
 import { useAuthFilesModels } from '@/features/authFiles/hooks/useAuthFilesModels';
@@ -52,7 +54,12 @@ import {
   type AuthFilesStatusFilterMode,
   type AuthFilesSortMode,
 } from '@/features/authFiles/uiState';
-import { useAuthStore, useNotificationStore, useThemeStore } from '@/stores';
+import { useAuthStore, useNotificationStore, useQuotaStore, useThemeStore } from '@/stores';
+import { QUOTA_ADAPTERS } from '@/features/quota/providers';
+import { classifyQuotaFiles, type QuotaFileEntry } from '@/features/quota/logic';
+import { QUOTA_PAGE_SIZE } from '@/features/quota/constants';
+import { unloadedQuotaEntries, weeklyRemainingPercent } from '@/features/quota/weeklyRemaining';
+import { useQuotaBatchLoader } from '@/features/quota/hooks/useQuotaBatchLoader';
 import styles from './AuthFilesPage.module.scss';
 
 const DEFAULT_REGULAR_PAGE_SIZE = 9;
@@ -442,12 +449,65 @@ export function AuthFilesPage() {
     [filesMatchingStatusFilters, normalizedFilter, normalizedSearch, wildcardSearch]
   );
 
+  const quotaState = useQuotaStore();
+  const { batchLoading, loadQuota } = useQuotaBatchLoader();
+  const getQuota = useCallback(
+    (entry: QuotaFileEntry) =>
+      QUOTA_ADAPTERS[entry.type].storeSelector(quotaState)[getQuotaCacheKey(entry.file)],
+    [quotaState]
+  );
   const sorted = useMemo(() => sortAuthFiles(filtered, sortMode), [filtered, sortMode]);
-
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * pageSize;
-  const pageItems = useMemo(() => sorted.slice(start, start + pageSize), [pageSize, sorted, start]);
+  const datePageItems = useMemo(
+    () => sorted.slice(start, start + pageSize),
+    [pageSize, sorted, start]
+  );
+  const pageItems = useMemo(
+    () =>
+      sortMode === 'default'
+        ? sortAuthFilesPageByQuota(datePageItems, (file) => {
+            const type = resolveAuthFileQuotaType(file, 'all');
+            return type ? weeklyRemainingPercent(type, getQuota({ file, type })) : null;
+          })
+        : datePageItems,
+    [datePageItems, sortMode, getQuota]
+  );
+  const quotaEntries = useMemo(
+    () => classifyQuotaFiles(datePageItems.filter((file) => !isRuntimeOnlyAuthFile(file))),
+    [datePageItems]
+  );
+
+  // Quota changes reorder the current page only; creation time fixes page membership.
+  useEffect(() => {
+    if (
+      sortMode !== 'default' ||
+      !uiStateHydrated ||
+      !isCurrentLayer ||
+      viewMode !== 'list' ||
+      disableControls ||
+      loading ||
+      error ||
+      batchLoading
+    )
+      return;
+    const targets = unloadedQuotaEntries(quotaEntries, getQuota, QUOTA_PAGE_SIZE);
+    if (targets.length > 0) void loadQuota(targets);
+  }, [
+    sortMode,
+    uiStateHydrated,
+    isCurrentLayer,
+    viewMode,
+    disableControls,
+    loading,
+    error,
+    batchLoading,
+    quotaEntries,
+    getQuota,
+    loadQuota,
+  ]);
+
   const selectablePageItems = useMemo(
     () => pageItems.filter((file) => !isRuntimeOnlyAuthFile(file)),
     [pageItems]

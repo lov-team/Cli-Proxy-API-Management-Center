@@ -62,6 +62,8 @@ export interface AuthFileItem {
   statusMessage?: string;
   lastRefresh?: string | number;
   modified?: number;
+  /** Backend credential creation time, normalized to milliseconds. */
+  createdAtMs?: number;
   priority?: number;
   weight?: number;
   note?: string;

@@ -2,17 +2,10 @@ import { describe, expect, test } from 'bun:test';
 import { weeklyRemainingPercent, unloadedQuotaEntries } from '@/features/quota/weeklyRemaining';
 import { classifyQuotaFiles, paginate, sortQuotaEntries } from '@/features/quota/logic';
 import type { QuotaProviderType } from '@/features/quota/providers/types';
-import { readFileSync } from 'node:fs';
 
 const success = (data: object) => ({ status: 'success', ...data });
 
 describe('weekly remaining capacity', () => {
-  test('labels the quota sort without changing auth-file sorting in every locale', () => {
-    for (const locale of ['zh-CN', 'zh-TW', 'en', 'ru']) {
-      const current = JSON.parse(readFileSync(`src/i18n/locales/${locale}.json`, 'utf8'));
-      expect(current.quota_management.sort_default).not.toBe(current.auth_files.sort_default);
-    }
-  });
   test.each([
     [
       'claude',

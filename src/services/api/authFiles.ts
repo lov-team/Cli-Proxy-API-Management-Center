@@ -259,6 +259,7 @@ const normalizeAuthFileEntry = (
   // （sdk/cliproxy/auth/types.go AccountInfo），不能进入展示与搜索路径。
   const projectId = readTextField(entry, 'project_id');
   const modified = readDateField(entry);
+  const createdAtMs = parseTimestampMs(entry['created_at'] ?? entry.createdAtMs);
   const priority = readIntegerField(entry['priority']);
   const weight = readIntegerField(entry['weight']);
 
@@ -272,6 +273,7 @@ const normalizeAuthFileEntry = (
     failureCount: normalizeUsageTotal(entry.failed),
     ...(statusMessage ? { statusMessage } : {}),
     ...(modified > 0 ? { modified } : {}),
+    createdAtMs: Number.isFinite(createdAtMs) && createdAtMs > 0 ? createdAtMs : undefined,
     priority,
     weight,
     ...(note ? { note } : {}),

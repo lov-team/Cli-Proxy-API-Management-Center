@@ -310,7 +310,7 @@
     "display_options_label": "显示选项",
     "compact_mode_label": "简略模式",
     "sort_label": "排序",
-    "sort_default": "默认",
+    "sort_default": "添加时间从新到旧 · 页内周剩余额度降序",
     "sort_az": "A-Z 名称",
     "sort_priority": "优先级",
     "priority_display": "优先级",

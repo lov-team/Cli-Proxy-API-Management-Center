@@ -6,6 +6,24 @@ const responseWithRawFiles = (files: Array<Record<string, unknown>>): AuthFilesR
   ({ files }) as unknown as AuthFilesResponse;
 
 describe('auth-files response normalization', () => {
+  test('normalizes creation timestamps independently of file modification times', () => {
+    const result = normalizeAuthFilesResponse(
+      responseWithRawFiles([
+        {
+          name: 'new',
+          created_at: '2026-10-23T10:00:00.123456789Z',
+          modtime: '2026-10-24T10:00:00Z',
+        },
+        { name: 'missing', modtime: '2026-10-24T10:00:00Z' },
+        { name: 'invalid', created_at: 'bad' },
+      ])
+    );
+    expect(result.files.find((file) => file.name === 'new')?.createdAtMs).toBe(
+      Date.parse('2026-10-23T10:00:00.123Z')
+    );
+    expect(result.files.find((file) => file.name === 'missing')?.createdAtMs).toBeUndefined();
+    expect(result.files.find((file) => file.name === 'invalid')?.createdAtMs).toBeUndefined();
+  });
   test('normalizes WRR weights while preserving zero and negative values', () => {
     const result = normalizeAuthFilesResponse(
       responseWithRawFiles([

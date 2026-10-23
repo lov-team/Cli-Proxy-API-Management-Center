@@ -4,7 +4,10 @@ import {
   matchesAuthFileSearch,
   resolveAuthFileQuotaType,
   sortAuthFiles,
+  sortAuthFilesPageByQuota,
 } from '../src/features/authFiles/logic';
+import { weeklyRemainingPercent } from '@/features/quota/weeklyRemaining';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import type { AuthFileItem } from '../src/types';
 
 const authFile = (overrides: Partial<AuthFileItem> = {}): AuthFileItem => ({
@@ -167,6 +170,97 @@ describe('sortAuthFiles', () => {
     expect(sortAuthFiles(files, 'nope' as unknown as 'az').map((file) => file.name)).toEqual([
       'b.json',
       'a.json',
+    ]);
+  });
+});
+
+describe('auth file creation-time pages with weekly quota ordering', () => {
+  test('fixes pages by creation time then sorts each page without moving old high-quota accounts forward', () => {
+    const files = Array.from({ length: 25 }, (_, index) =>
+      authFile({
+        name: `${index}.json`,
+        type: 'devin',
+        authIndex: index,
+        createdAtMs: 1000 + index,
+      })
+    );
+    const before = [...files];
+    const newestFirst = sortAuthFiles(files, 'default');
+    const balances: Record<string, number | null> = {
+      '0.json': 100,
+      '24.json': 20,
+      '23.json': 80,
+      '22.json': 0,
+    };
+    const quota = (file: AuthFileItem) => balances[file.name] ?? null;
+    const first = sortAuthFilesPageByQuota(newestFirst.slice(0, 9), quota);
+    expect(first.slice(0, 4).map((file) => file.name)).toEqual([
+      '23.json',
+      '24.json',
+      '22.json',
+      '21.json',
+    ]);
+    expect(first).not.toContain(files[0]);
+    expect(sortAuthFilesPageByQuota(newestFirst.slice(18), quota)[0]).toBe(files[0]);
+    balances['24.json'] = 90;
+    expect(sortAuthFilesPageByQuota(newestFirst.slice(0, 9), quota)[0]).toBe(files[24]);
+    expect(files).toEqual(before);
+  });
+
+  test('uses creation time rather than modification time, putting missing creation times last', () => {
+    const files = [
+      authFile({ name: 'old', createdAtMs: 1000, modified: 9000 }),
+      authFile({ name: 'new', createdAtMs: 2000, modified: 3000 }),
+      authFile({ name: 'unknown', modified: 10000 }),
+    ];
+    expect(sortAuthFiles(files, 'default').map((file) => file.name)).toEqual([
+      'new',
+      'old',
+      'unknown',
+    ]);
+  });
+
+  test('uses weekly capacity and keeps same-name Devin credentials independent', () => {
+    const files = [
+      authFile({ name: 'same.json', type: 'devin', authIndex: 1 }),
+      authFile({ name: 'same.json', type: 'devin', authIndex: 2 }),
+    ];
+    const quota = new Map(
+      files.map((file, index) => [
+        getQuotaCacheKey(file),
+        {
+          status: 'success',
+          windows: [
+            { id: 'daily', remainingPercent: 100 - index * 100 },
+            { id: 'weekly', remainingPercent: index * 90 },
+          ],
+        },
+      ])
+    );
+    const sorted = sortAuthFilesPageByQuota(files, (file) =>
+      weeklyRemainingPercent('devin', quota.get(getQuotaCacheKey(file)))
+    );
+    expect(sorted).toEqual([files[1], files[0]]);
+  });
+
+  test('keeps date order for equal/unknown quota and treats non-finite values as unknown', () => {
+    const files = ['b', 'a', 'zero', 'nan', 'infinity'].map((name) => authFile({ name }));
+    const balances: Record<string, number> = {
+      a: 50,
+      b: 50,
+      zero: 0,
+      nan: NaN,
+      infinity: Infinity,
+    };
+    expect(
+      sortAuthFilesPageByQuota(files, (file) => balances[file.name]).map((file) => file.name)
+    ).toEqual(['b', 'a', 'zero', 'nan', 'infinity']);
+    expect(sortAuthFiles(files, 'az').map((file) => file.name)).toEqual([
+      'a',
+      'b',
+      'infinity',
+      'nan',
+      'zero',
     ]);
   });
 });
