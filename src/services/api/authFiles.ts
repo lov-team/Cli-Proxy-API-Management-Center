@@ -15,6 +15,17 @@ import {
 import { parseTimestampMs } from '@/utils/timestamp';
 import { normalizeAuthFileCooldowns, normalizeCooldownTimestamp } from './authFileCooldowns';
 
+export type AuthDiagnosticResult = {
+  success: boolean;
+  skipped?: boolean;
+  message: string;
+  time: number;
+  status_code?: number;
+  proxy_source?: 'account' | 'global' | 'direct';
+  target?: string;
+  model?: string;
+};
+
 type StatusError = { status?: number };
 type AuthFileStatusResponse = { status: string; disabled: boolean };
 export type AuthFileLookup = { name: string; authIndex?: string };
@@ -433,6 +444,20 @@ export const serializeOauthModelAliases = (
 const OAUTH_MODEL_ALIAS_ENDPOINT = '/oauth-model-alias';
 
 export const authFilesApi = {
+  testProxy: (lookup: AuthFileLookup, signal?: AbortSignal) =>
+    apiClient.post<AuthDiagnosticResult>(
+      '/auth-files/proxy-test',
+      { name: lookup.name, ...(lookup.authIndex ? { auth_index: lookup.authIndex } : {}) },
+      { signal, timeout: 0 }
+    ),
+
+  testModel: (lookup: AuthFileLookup, model: string, signal?: AbortSignal) =>
+    apiClient.post<AuthDiagnosticResult>(
+      '/auth-files/model-test',
+      { name: lookup.name, model, ...(lookup.authIndex ? { auth_index: lookup.authIndex } : {}) },
+      { signal, timeout: 0 }
+    ),
+
   list: async (lookup?: AuthFileLookup) =>
     normalizeAuthFilesResponse(
       await apiClient.get<AuthFilesResponse>(
@@ -555,14 +580,31 @@ export const authFilesApi = {
 
   // 获取认证凭证支持的模型
   async getModelsForAuthFile(
-    name: string
-  ): Promise<{ id: string; display_name?: string; type?: string; owned_by?: string }[]> {
+    name: string,
+    authIndex?: string,
+    signal?: AbortSignal
+  ): Promise<
+    {
+      id: string;
+      display_name?: string;
+      type?: string;
+      owned_by?: string;
+      test_supported?: boolean;
+    }[]
+  > {
     const data = await apiClient.get<Record<string, unknown>>(
-      `/auth-files/models?name=${encodeURIComponent(name)}`
+      `/auth-files/models?name=${encodeURIComponent(name)}${authIndex ? `&auth_index=${encodeURIComponent(authIndex)}` : ''}`,
+      { signal }
     );
     const models = data.models ?? data['models'];
     return Array.isArray(models)
-      ? (models as { id: string; display_name?: string; type?: string; owned_by?: string }[])
+      ? (models as {
+          id: string;
+          display_name?: string;
+          type?: string;
+          owned_by?: string;
+          test_supported?: boolean;
+        }[])
       : [];
   },
 

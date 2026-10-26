@@ -400,7 +400,28 @@
     "quota_refresh_single": "Refresh quota",
     "quota_refresh_hint": "Refresh quota only for this credential",
     "quota_refresh_success": "Quota refreshed for \"{{name}}\"",
-    "quota_refresh_failed": "Failed to refresh quota for \"{{name}}\": {{message}}"
+    "quota_refresh_failed": "Failed to refresh quota for \"{{name}}\": {{message}}",
+    "diagnostics": {
+      "title": "Account diagnostics",
+      "proxy": "Check proxy",
+      "proxy_hint": "Uses the saved account proxy or inherited global proxy. HTTP 401/403 confirms reachability, not account authentication.",
+      "model": "Model",
+      "test_model": "Test model connection",
+      "model_hint": "Sends a short real request using only this account. Text models only; usage may be billed. Disabled accounts and cooldowns retain normal safeguards.",
+      "saved_hint": "Tests use the configuration saved on the server.",
+      "save_first": "Save your changes before testing.",
+      "loading_models": "Loading models…",
+      "no_models": "No testable models",
+      "retry": "Retry",
+      "cancel": "Cancel test",
+      "success": "Succeeded",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "elapsed": "{{seconds}} s",
+      "source_account": "Proxy: account configuration",
+      "source_global": "Proxy: inherited global configuration",
+      "source_direct": "Direct connection (proxy test skipped)"
+    }
   },
   "antigravity_subscription": {
     "plan_unknown": "Unknown",

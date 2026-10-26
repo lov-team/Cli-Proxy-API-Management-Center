@@ -398,7 +398,28 @@
     "quota_refresh_single": "刷新额度",
     "quota_refresh_hint": "仅刷新该认证文件的额度",
     "quota_refresh_success": "已刷新 \"{{name}}\" 的额度",
-    "quota_refresh_failed": "刷新 \"{{name}}\" 的额度失败：{{message}}"
+    "quota_refresh_failed": "刷新 \"{{name}}\" 的额度失败：{{message}}",
+    "diagnostics": {
+      "title": "账号检测",
+      "proxy": "代理检测",
+      "proxy_hint": "使用账号已保存的代理，未配置时继承全局代理。HTTP 401/403 表示已到达上游，不代表账号认证成功。",
+      "model": "选择模型",
+      "test_model": "测试模型连接",
+      "model_hint": "仅使用当前账号发送简短真实请求。目前支持文本模型，可能消耗额度；禁用及冷却状态仍遵循现有规则。",
+      "saved_hint": "检测使用服务端已保存的配置。",
+      "save_first": "请先保存修改，再执行检测。",
+      "loading_models": "正在加载模型…",
+      "no_models": "暂无可测试的模型",
+      "retry": "重试",
+      "cancel": "取消检测",
+      "success": "检测成功",
+      "failed": "检测失败",
+      "skipped": "已跳过",
+      "elapsed": "{{seconds}} 秒",
+      "source_account": "代理来源：账号配置",
+      "source_global": "代理来源：继承全局配置",
+      "source_direct": "连接方式：直连（跳过代理检测）"
+    }
   },
   "antigravity_subscription": {
     "plan_unknown": "未知",

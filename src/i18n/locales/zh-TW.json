@@ -398,7 +398,28 @@
     "quota_refresh_single": "重新整理配額",
     "quota_refresh_hint": "僅重新整理該驗證檔案的配額",
     "quota_refresh_success": "已重新整理「{{name}}」的配額",
-    "quota_refresh_failed": "重新整理「{{name}}」的配額失敗：{{message}}"
+    "quota_refresh_failed": "重新整理「{{name}}」的配額失敗：{{message}}",
+    "diagnostics": {
+      "title": "帳號檢測",
+      "proxy": "代理檢測",
+      "proxy_hint": "使用帳號已儲存的代理，未設定時繼承全域代理。HTTP 401/403 表示已到達上游，不代表帳號驗證成功。",
+      "model": "選擇模型",
+      "test_model": "測試模型連線",
+      "model_hint": "僅使用目前帳號傳送簡短真實請求。目前支援文字模型，可能消耗額度；停用及冷卻狀態仍遵循現有規則。",
+      "saved_hint": "檢測使用伺服器已儲存的設定。",
+      "save_first": "請先儲存修改，再執行檢測。",
+      "loading_models": "正在載入模型…",
+      "no_models": "暫無可測試的模型",
+      "retry": "重試",
+      "cancel": "取消檢測",
+      "success": "檢測成功",
+      "failed": "檢測失敗",
+      "skipped": "已略過",
+      "elapsed": "{{seconds}} 秒",
+      "source_account": "代理來源：帳號設定",
+      "source_global": "代理來源：繼承全域設定",
+      "source_direct": "連線方式：直連（略過代理檢測）"
+    }
   },
   "antigravity_subscription": {
     "plan_unknown": "未知",

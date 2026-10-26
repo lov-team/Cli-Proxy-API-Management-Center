@@ -17,6 +17,7 @@ import {
   supportsAuthFileWebsockets,
 } from '@/features/authFiles/constants';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
+import { AuthFileDiagnostics } from './AuthFileDiagnostics';
 import { AuthFileExcludedModelsField } from './AuthFileExcludedModelsField';
 import styles from './AuthFileDetailsSheet.module.scss';
 
@@ -171,6 +172,19 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
           ) : (
             <>
               {editor.error && <div className={styles.error}>{editor.error}</div>}
+              <AuthFileDiagnostics
+                name={editor.fileName}
+                authIndex={(() => {
+                  try {
+                    const info = JSON.parse(editor.fileInfoText) as Record<string, unknown>;
+                    return String(info.auth_index ?? info.authIndex ?? '') || undefined;
+                  } catch {
+                    return undefined;
+                  }
+                })()}
+                disabled={disableControls || editor.saving}
+                dirty={dirty}
+              />
               <div className={styles.jsonWrapper}>
                 <label className={styles.label}>{t('auth_files.prefix_proxy_info_label')}</label>
                 <textarea className={styles.textarea} rows={8} readOnly value={displayInfoText} />
