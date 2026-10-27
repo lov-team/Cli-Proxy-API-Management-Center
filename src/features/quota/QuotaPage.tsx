@@ -2,7 +2,7 @@
  * 额度查询页：提供商 tabs + 统一卡网格。
  *
  * 保留的行为契约（重设计不改）：
- * - 现有提供商保持点击加载；Devin 首次可见时主动查询一次，不轮询；
+ * - Weekly sorting discovers quotas in bounded batches; recovery sorting keeps click-to-load.
  * - cacheGeneration 会话隔离 + request-id 去重（见 useQuotaBatchLoader）；
  * - 文件列表变化后按 provider 剪枝额度缓存（已删文件不残留）；
  * - useHeaderRefresh 单槽位：本页唯一注册者，全局刷新 = 重取文件列表。
@@ -45,6 +45,7 @@ import {
   type QuotaFileEntry,
 } from './logic';
 import { nextRecoveryMs } from './resetSchedule';
+import { unloadedQuotaEntries, weeklyRemainingPercent } from './weeklyRemaining';
 import { QUOTA_ADAPTERS, getQuotaSetter, type QuotaCardState } from './providers';
 import type { QuotaProviderType } from './providers/types';
 import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
@@ -123,8 +124,7 @@ export function QuotaPage() {
     };
   }, [loadFiles]);
 
-  /* ---------- 额度缓存 ----------
-   * 排在归类/排序之前：「最快恢复优先」要读它算排序键。 */
+  /* Quota cache: both sort modes derive their keys from provider observations. */
 
   const antigravityQuota = useQuotaStore((state) => state.antigravityQuota);
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
@@ -172,14 +172,17 @@ export function QuotaPage() {
     setPage(1);
   }, []);
 
-  const resolveNextRecovery = useCallback(
-    (entry: QuotaFileEntry) => nextRecoveryMs(entry.type, getQuota(entry), sortNow),
-    [getQuota, sortNow]
+  const resolveSortValue = useCallback(
+    (entry: QuotaFileEntry) =>
+      sortMode === 'default'
+        ? weeklyRemainingPercent(entry.type, getQuota(entry))
+        : nextRecoveryMs(entry.type, getQuota(entry), sortNow),
+    [getQuota, sortMode, sortNow]
   );
-  // 排序在分页之前：否则「最快恢复」只在当前页内成立。
+  // Sort before pagination so every loaded account participates in the ranking.
   const sortedEntries = useMemo(
-    () => sortQuotaEntries(filteredEntries, sortMode, resolveNextRecovery),
-    [filteredEntries, sortMode, resolveNextRecovery]
+    () => sortQuotaEntries(filteredEntries, sortMode, resolveSortValue),
+    [filteredEntries, sortMode, resolveSortValue]
   );
 
   const { pageItems, currentPage, totalPages } = useMemo(
@@ -242,6 +245,31 @@ export function QuotaPage() {
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
   const { resettingQuotaName, refreshQuota, resetQuota } = useQuotaActions(disableControls);
 
+  useEffect(() => {
+    if (
+      sortMode !== 'default' ||
+      disableControls ||
+      loading ||
+      batchLoading ||
+      error ||
+      filesGeneration !== sessionGeneration
+    )
+      return;
+    const targets = unloadedQuotaEntries(filteredEntries, getQuota, QUOTA_PAGE_SIZE);
+    if (targets.length > 0) void loadQuota(targets);
+  }, [
+    sortMode,
+    disableControls,
+    loading,
+    batchLoading,
+    error,
+    filesGeneration,
+    sessionGeneration,
+    filteredEntries,
+    getQuota,
+    loadQuota,
+  ]);
+
   const pendingRefreshRef = useRef<number | null>(null);
   const prevLoadingRef = useRef(loading);
 
@@ -280,7 +308,8 @@ export function QuotaPage() {
 
   useDevinQuotaAutoLoad(
     pageItems,
-    disableControls ||
+    sortMode === 'default' ||
+      disableControls ||
       loading ||
       batchLoading ||
       Boolean(error) ||

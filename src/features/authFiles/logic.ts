@@ -59,6 +59,9 @@ export const sortAuthFiles = (files: AuthFileItem[], mode: AuthFilesSortMode): A
   const copy = [...files];
   if (mode === 'default') {
     copy.sort((a, b) => {
+      const createdA = a.createdAtMs ?? 0;
+      const createdB = b.createdAtMs ?? 0;
+      if (createdA !== createdB) return createdB - createdA;
       const providerA = normalizeProviderKey(String(a.provider ?? a.type ?? 'unknown'));
       const providerB = normalizeProviderKey(String(b.provider ?? b.type ?? 'unknown'));
       const providerCompare = providerA.localeCompare(providerB);
@@ -81,3 +84,19 @@ export const sortAuthFiles = (files: AuthFileItem[], mode: AuthFilesSortMode): A
   }
   return copy;
 };
+
+/** Sort only the already selected page; ties retain newest-first order. */
+export const sortAuthFilesPageByQuota = (
+  files: AuthFileItem[],
+  weeklyRemaining: (file: AuthFileItem) => number | null
+): AuthFileItem[] =>
+  files
+    .map((file, index) => ({ file, index, balance: weeklyRemaining(file) }))
+    .sort((a, b) => {
+      const knownA = typeof a.balance === 'number' && Number.isFinite(a.balance);
+      const knownB = typeof b.balance === 'number' && Number.isFinite(b.balance);
+      if (knownA !== knownB) return knownA ? -1 : 1;
+      if (knownA && knownB) return b.balance! - a.balance! || a.index - b.index;
+      return a.index - b.index;
+    })
+    .map(({ file }) => file);

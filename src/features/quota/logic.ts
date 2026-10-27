@@ -78,17 +78,14 @@ export function filterEntriesBySearch(entries: QuotaFileEntry[], search: string)
 }
 
 /**
- * Order the grid by whichever credential recovers first.
+ * Order by weekly remaining capacity (descending) or recovery time (ascending).
  *
- * The instant is injected rather than read here: quota lives in the store and
+ * The value is injected rather than read here: quota lives in the store and
  * arrives asynchronously, and keeping this function store-free is what makes
  * the ordering rules directly testable.
  *
- * Credentials with no instant — not loaded yet, failed, or reporting no
- * upcoming reset — sink to the bottom rather than sorting as "now". They keep
- * their incoming provider-grouped order, so the unloaded tail still reads like
- * the default view instead of an arbitrary shuffle. Because loading is
- * click-to-fetch, that tail is most of the list until the user asks for data.
+ * Missing or non-finite values sink below all known values, including zero.
+ * Ties and unknown values retain their incoming provider-grouped order.
  *
  * The original index is the final tiebreak, making stability an asserted
  * property rather than an assumption about the engine's sort.
@@ -96,18 +93,20 @@ export function filterEntriesBySearch(entries: QuotaFileEntry[], search: string)
 export function sortQuotaEntries(
   entries: QuotaFileEntry[],
   mode: QuotaSortMode,
-  resolveNextRecoveryMs: (entry: QuotaFileEntry) => number | null
+  resolveSortValue: (entry: QuotaFileEntry) => number | null
 ): QuotaFileEntry[] {
-  if (mode !== 'soonest') return [...entries];
-
   // Decorate once — resolving pokes at provider-shaped state per entry.
   return entries
-    .map((entry, index) => ({ entry, index, atMs: resolveNextRecoveryMs(entry) }))
+    .map((entry, index) => {
+      const value = resolveSortValue(entry);
+      return { entry, index, value: value !== null && Number.isFinite(value) ? value : null };
+    })
     .sort((a, b) => {
-      if (a.atMs === null && b.atMs === null) return a.index - b.index;
-      if (a.atMs === null) return 1;
-      if (b.atMs === null) return -1;
-      return a.atMs - b.atMs || a.index - b.index;
+      if (a.value === null && b.value === null) return a.index - b.index;
+      if (a.value === null) return 1;
+      if (b.value === null) return -1;
+      const difference = mode === 'soonest' ? a.value - b.value : b.value - a.value;
+      return difference || a.index - b.index;
     })
     .map((decorated) => decorated.entry);
 }
