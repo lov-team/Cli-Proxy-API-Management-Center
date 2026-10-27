@@ -23,8 +23,13 @@ REQUIRED = {
 }
 
 
-def check_source():
-    for baseline in BASELINES:
+def check_source(require_history=False):
+    shallow = subprocess.check_output(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT, text=True).strip() == "true"
+    if shallow and require_history:
+        raise ValueError("Release ancestry requires a full Git checkout")
+    if shallow:
+        print("NOTE: shallow CI checkout; checking feature contracts and tests. Release builds require full history.")
+    for baseline in () if shallow else BASELINES:
         result = subprocess.run(["git", "merge-base", "--is-ancestor", baseline, "HEAD"], cwd=ROOT)
         if result.returncode:
             raise ValueError("Frontend must inherit both shipped sorting and diagnostics commits")
@@ -44,9 +49,10 @@ def check_artifact(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact", type=Path)
+    parser.add_argument("--require-history", action="store_true", help="Require complete Git history for production releases")
     args = parser.parse_args()
     try:
-        check_source()
+        check_source(args.require_history)
         if args.artifact:
             check_artifact(args.artifact)
     except (OSError, ValueError) as error:

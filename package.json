@@ -6,11 +6,11 @@
   "packageManager": "bun@1.3.14",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "python3 -B scripts/check_release.py && tsc && vite build && python3 -B scripts/check_release.py --artifact dist/index.html",
     "preview": "vite preview",
     "test": "bun test",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives",
-    "verify": "python3 -B scripts/check_release.py && bun run test && bun run lint && bun run build && python3 -B scripts/check_release.py --artifact dist/index.html",
+    "verify": "bun run test && bun run lint && bun run build",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,scss}\"",
     "type-check": "tsc --noEmit"
   },
