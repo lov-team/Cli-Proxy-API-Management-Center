@@ -207,24 +207,22 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
       ) : (
         <div className={styles.quotaMessage}>{t(`${adapter.i18nPrefix}.idle`)}</div>
       )}
-      {quotaStatus !== 'idle' && (resetQuotaAction || quotaType === 'devin') && (
+      {quotaStatus !== 'idle' && (
         <div className={styles.quotaCardActions}>
           {resetQuotaAction}
-          {quotaType === 'devin' && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className={styles.quotaResetCreditButton}
-              onClick={() => void refreshQuotaForFile()}
-              disabled={!canRefreshQuota || quotaStatus === 'loading'}
-              loading={quotaStatus === 'loading'}
-              title={t('auth_files.quota_refresh_hint')}
-            >
-              {quotaStatus !== 'loading' && <IconRefreshCw size={14} />}
-              {t('auth_files.quota_refresh_single')}
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className={styles.quotaResetCreditButton}
+            onClick={() => void refreshQuotaForFile()}
+            disabled={!canRefreshQuota || quotaStatus === 'loading'}
+            loading={quotaStatus === 'loading'}
+            title={t('auth_files.quota_refresh_hint')}
+          >
+            {quotaStatus !== 'loading' && <IconRefreshCw size={14} />}
+            {t('auth_files.quota_refresh_single')}
+          </Button>
         </div>
       )}
     </div>

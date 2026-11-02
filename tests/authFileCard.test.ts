@@ -55,6 +55,18 @@ describe('auth file card presentation contract', () => {
     }
   });
 
+  test('keeps a quota refresh button for every supported auth file', () => {
+    const quotaSource = readFileSync(
+      new URL('../src/features/authFiles/components/AuthFileQuotaSection.tsx', import.meta.url),
+      'utf8'
+    );
+    const actions = quotaSource.split('quotaCardActions')[1]?.split('</div>')[0] ?? '';
+    expect(actions).toContain("t('auth_files.quota_refresh_single')");
+    expect(actions).toContain("t('auth_files.quota_refresh_hint')");
+    expect(actions).toContain('refreshQuotaForFile()');
+    expect(actions).not.toContain("quotaType === 'devin'");
+  });
+
   test('retains individual management actions and warning detail', () => {
     for (const handler of [
       'onShowModels(file)',
