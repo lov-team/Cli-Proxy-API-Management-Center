@@ -25,6 +25,7 @@ import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { ProviderTabs } from '@/features/authFiles/components/ProviderTabs';
 import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaCard } from './components/QuotaCard';
+import { DevinQuotaHistory } from './components/DevinQuotaHistory';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import {
   CARD_ENTRANCE_BUDGET_MS,
@@ -363,6 +364,8 @@ export function QuotaPage() {
             onChange={handleTabChange}
           />
         </div>
+
+        {tab === 'devin' && <DevinQuotaHistory />}
 
         <div className={styles.toolbar}>
           <div className={styles.search}>

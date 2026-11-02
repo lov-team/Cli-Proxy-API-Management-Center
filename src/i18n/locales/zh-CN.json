@@ -1894,5 +1894,35 @@
     "modelCatalog": {
       "notLoaded": "未加载"
     }
+  },
+  "quota_history": {
+    "title": "Devin 额度历史",
+    "description": "每5分钟采样 · 保留90天 · 不同套餐分别统计",
+    "timezone": "统计时区",
+    "beijing": "北京时间",
+    "new_york": "纽约时间",
+    "refresh": "刷新",
+    "error": "额度历史加载失败，请检查服务端是否支持并已开启台账。",
+    "unavailable": "暂无数据",
+    "observed": "最近采样：{{time}}",
+    "stale": "快照已过期或采样期间账号清单发生变化，汇总可能不完整。",
+    "empty": "等待首次额度采样。",
+    "account_count": "{{count}} 个账号",
+    "remaining": "已测周余额（点）",
+    "today": "今日消耗（点）",
+    "last_week": "上周同日截至同期消耗",
+    "exhausted": "周额度耗尽账号",
+    "failed": "{{count}} 个账号未能采样，余额仅汇总成功采样部分。",
+    "comparable": "可比子集：{{count}} 个账号消耗 {{value}} 点，不代表整池总消耗。",
+    "accelerated": "今日消耗超过上周同期的两倍，请检查需求和账号分布。",
+    "trend": "按时刻对齐的周额度剩余比例",
+    "plan": "订阅套餐",
+    "today_line": "今天",
+    "last_week_line": "上周同一天",
+    "method": "每个点为小时快照，缺失数据留空。今日消耗要求起止账号、套餐与重置周期一致，边界采样允许10分钟偏差。额度重置或余额增加不计为负消耗。数值为归一化额度点，不是金额或 token。",
+    "accounts": "逐账号消耗排名",
+    "account": "账号",
+    "weekly": "周余额",
+    "reset": "周重置时间"
   }
 }

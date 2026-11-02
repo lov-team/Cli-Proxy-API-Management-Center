@@ -1920,5 +1920,35 @@
     "modelCatalog": {
       "notLoaded": "未載入"
     }
+  },
+  "quota_history": {
+    "title": "Devin 額度歷史",
+    "description": "每5分鐘採樣 · 保留90天 · 不同方案分別統計",
+    "timezone": "統計時區",
+    "beijing": "北京時間",
+    "new_york": "紐約時間",
+    "refresh": "重新整理",
+    "error": "額度歷史載入失敗，請檢查伺服器是否支援並已啟用台帳。",
+    "unavailable": "暫無資料",
+    "observed": "最近採樣：{{time}}",
+    "stale": "快照已過期或採樣期間帳號清單發生變化，彙總可能不完整。",
+    "empty": "等待首次額度採樣。",
+    "account_count": "{{count}} 個帳號",
+    "remaining": "已測週餘額（點）",
+    "today": "今日消耗（點）",
+    "last_week": "上週同日截至同期消耗",
+    "exhausted": "週額度耗盡帳號",
+    "failed": "{{count}} 個帳號未能採樣，餘額僅彙總成功採樣部分。",
+    "comparable": "可比子集：{{count}} 個帳號消耗 {{value}} 點，不代表整池總消耗。",
+    "accelerated": "今日消耗超過上週同期的兩倍，請檢查需求和帳號分布。",
+    "trend": "按時刻對齊的週額度剩餘比例",
+    "plan": "訂閱方案",
+    "today_line": "今天",
+    "last_week_line": "上週同一天",
+    "method": "每個點為小時快照，缺失資料留空。今日消耗要求起止帳號、方案與重置週期一致，邊界採樣允許10分鐘偏差。額度重置或餘額增加不計為負消耗。數值為歸一化額度點，不是金額或 token。",
+    "accounts": "逐帳號消耗排名",
+    "account": "帳號",
+    "weekly": "週餘額",
+    "reset": "週重置時間"
   }
 }

@@ -1896,5 +1896,35 @@
     "modelCatalog": {
       "notLoaded": "Not loaded"
     }
+  },
+  "quota_history": {
+    "title": "Devin quota history",
+    "description": "Sampled every 5 minutes · retained for 90 days · plans are calculated separately",
+    "timezone": "Statistics timezone",
+    "beijing": "Beijing time",
+    "new_york": "New York time",
+    "refresh": "Refresh",
+    "error": "Quota history could not be loaded. Check that the server supports and has enabled history.",
+    "unavailable": "Unavailable",
+    "observed": "Last observation: {{time}}",
+    "stale": "The snapshot is stale or the account inventory changed during collection. Totals may be incomplete.",
+    "empty": "Waiting for the first quota observation.",
+    "account_count": "{{count}} accounts",
+    "remaining": "Measured weekly balance (points)",
+    "today": "Today’s consumption (points)",
+    "last_week": "Last week, through the same time",
+    "exhausted": "Weekly quota exhausted",
+    "failed": "{{count}} accounts could not be measured; totals only include successful observations.",
+    "comparable": "Comparable subset: {{count}} accounts, {{value}} points consumed; this is not the full pool total.",
+    "accelerated": "Today’s consumption exceeds twice the same period last week. Check demand and account distribution.",
+    "trend": "Weekly remaining capacity by time of day",
+    "plan": "Subscription plan",
+    "today_line": "Today",
+    "last_week_line": "Same weekday last week",
+    "method": "Each point is an hourly snapshot. Missing data remains blank. Daily consumption requires matching accounts, plans and reset periods at both boundaries (within 10 minutes). Resets or balance increases are not counted as negative consumption. Values are normalized quota points, not money or tokens.",
+    "accounts": "Account consumption ranking",
+    "account": "Account",
+    "weekly": "Weekly remaining",
+    "reset": "Weekly reset"
   }
 }
